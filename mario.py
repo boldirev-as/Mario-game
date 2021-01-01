@@ -10,10 +10,14 @@ screen = pygame.display.set_mode(size)
 
 
 def load_level(filename):
-    filename = "data/" + filename
+    filename = filename
     # читаем уровень, убирая символы перевода строки
-    with open(filename, 'r') as mapFile:
-        level_map = [line.strip() for line in mapFile]
+    try:
+        with open(filename, 'r') as mapFile:
+            level_map = [line.strip() for line in mapFile]
+    except FileNotFoundError:
+        print("файл не найден")
+        terminate()
 
     # и подсчитываем максимальную длину
     max_width = max(map(len, level_map))
@@ -147,7 +151,7 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
 
     start_screen()
-    LEVEL = load_level('map.txt')
+    LEVEL = load_level(input())
     player, level_x, level_y = generate_level(LEVEL)
 
     while running:
