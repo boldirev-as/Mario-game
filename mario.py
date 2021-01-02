@@ -65,28 +65,49 @@ class Tile(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
+        self.x = pos_x
+        self.y = pos_y
         self.image = player_image
         self.rect = self.image.get_rect().move(
             tile_width * pos_x + 15, tile_height * pos_y + 5)
 
     def update(self, *args, **kwargs) -> None:
-        coords = [self.rect.x, self.rect.y]
+        x, y = 0, 0
 
         if pygame.key.get_pressed()[pygame.K_UP]:
-            coords[1] -= tile_height
+            y -= 1
         elif pygame.key.get_pressed()[pygame.K_DOWN]:
-            coords[1] += tile_height
+            y += 1
         elif pygame.key.get_pressed()[pygame.K_LEFT]:
-            coords[0] -= tile_width
+            x -= 1
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
-            coords[0] += tile_width
+            x += 1
 
-        x, y = coords[0] // tile_width, coords[1] // tile_width
-        if 0 > x < level_x or 0 > y < level_y or LEVEL[y][x] == "#":
+        print(LEVEL[y][x])
+        if 0 > self.x + x < level_x or 0 > self.y < level_y + y or \
+                LEVEL[self.y + y][self.x + x] == "#":
             return
 
-        self.rect.update(*coords, self.image.get_width(),
-                         self.image.get_height())
+        self.x += x
+        self.y += y
+        self.rect = self.rect.move(x * tile_width, y * tile_height)
+
+
+class Camera:
+    # зададим начальный сдвиг камеры
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    # сдвинуть объект obj на смещение камеры
+    def apply(self, obj):
+        obj.rect.x += self.dx
+        obj.rect.y += self.dy
+
+    # позиционировать камеру на объекте target
+    def update(self, target):
+        self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
+        self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
 def generate_level(level):
@@ -132,13 +153,14 @@ def start_screen():
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
                 return  # начинаем игру
+
         pygame.display.flip()
         clock.tick(FPS)
 
 
 if __name__ == '__main__':
     pygame.init()
-    pygame.display.set_caption('Перемещение героя')
+    pygame.display.set_caption('Перемещение героя. Камера')
 
     player = None
 
@@ -151,8 +173,10 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
 
     start_screen()
-    LEVEL = load_level(input())
+    LEVEL = load_level("data/map2.txt")
     player, level_x, level_y = generate_level(LEVEL)
+
+    camera = Camera()
 
     while running:
         screen.fill((0, 0, 0))
@@ -163,6 +187,12 @@ if __name__ == '__main__':
         player_group.update()
         tiles_group.draw(screen)
         player_group.draw(screen)
+
+        # изменяем ракурс камеры
+        camera.update(player)
+        # обновляем положение всех спрайтов
+        for sprite in all_sprites:
+            camera.apply(sprite)
 
         pygame.display.flip()
         clock.tick(FPS)
