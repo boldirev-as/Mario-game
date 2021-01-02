@@ -83,9 +83,7 @@ class Player(pygame.sprite.Sprite):
         elif pygame.key.get_pressed()[pygame.K_RIGHT]:
             x += 1
 
-        print(LEVEL[y][x])
-        if 0 > self.x + x < level_x or 0 > self.y < level_y + y or \
-                LEVEL[self.y + y][self.x + x] == "#":
+        if LEVEL[(self.y + y) % level_y][(self.x + x) % level_x] == "#":
             return
 
         self.x += x
@@ -103,11 +101,13 @@ class Camera:
     def apply(self, obj):
         obj.rect.x += self.dx
         obj.rect.y += self.dy
+        obj.rect.x = obj.rect.x % (level_x * tile_width)
+        obj.rect.y = obj.rect.y % (level_y * tile_height)
 
     # позиционировать камеру на объекте target
     def update(self, target):
-        self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
-        self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
+        self.dx = -(target.rect.x + target.rect.w - WIDTH // 2)
+        self.dy = -(target.rect.y + target.rect.h - HEIGHT // 2)
 
 
 def generate_level(level):
@@ -138,7 +138,7 @@ def start_screen():
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in intro_text:
-        string_rendered = font.render(line, 1, pygame.Color('black'))
+        string_rendered = font.render(line, True, pygame.Color('black'))
         intro_rect = string_rendered.get_rect()
         text_coord += 10
         intro_rect.top = text_coord
@@ -160,9 +160,7 @@ def start_screen():
 
 if __name__ == '__main__':
     pygame.init()
-    pygame.display.set_caption('Перемещение героя. Камера')
-
-    player = None
+    pygame.display.set_caption('Перемещение героя. Новый уровень')
 
     # группы спрайтов
     all_sprites = pygame.sprite.Group()
@@ -175,6 +173,8 @@ if __name__ == '__main__':
     start_screen()
     LEVEL = load_level("data/map2.txt")
     player, level_x, level_y = generate_level(LEVEL)
+    level_y += 1
+    level_x += 1
 
     camera = Camera()
 
